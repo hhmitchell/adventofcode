@@ -13,8 +13,6 @@ def main(args):
                     crabs.extend([0] * (num + 1 - len(crabs)))
                 crabs[num] += 1
 
-    #print(crabs)
-
     fuel = [0] * len(crabs)
     for i in range(len(crabs)):
         for j in range(len(crabs)):
@@ -22,7 +20,6 @@ def main(args):
             cost = distance * (distance + 1) / 2
             fuel[i] += crabs[j] * cost
 
-    #print(fuel)
     print(fuel.index(min(fuel)))
     print(min(fuel))
 
