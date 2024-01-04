@@ -8,15 +8,27 @@ import (
 	"strconv"
 )
 
+type Gear struct {
+	i, j      int
+	parts     []int
+	num_parts int
+}
+
 type Schematic struct {
 	num_rows  int
 	capacity  int
 	schematic []string
+	gears     []*Gear
+	num_gears int
 }
 
 func newSchematic() Schematic {
 	init_capacity := 2
-	return Schematic{0, init_capacity, make([]string, init_capacity)}
+	return Schematic{0, init_capacity, make([]string, init_capacity), nil, 0}
+}
+
+func newGear(i, j int) *Gear {
+	return &Gear{i, j, make([]int, 8), 0}
 }
 
 func (s *Schematic) get_num_rows() int {
@@ -36,8 +48,32 @@ func (s *Schematic) add_row(row string) {
 	s.num_rows = s.num_rows + 1
 }
 
-func (s *Schematic) foo() int {
-	var sum int
+func (g *Gear) add_part(part_number int) {
+	g.parts[g.num_parts] = part_number
+	g.num_parts = g.num_parts + 1
+}
+
+func (s *Schematic) add_gear_part(i, j, part_number int) {
+	if s.gears == nil {
+		s.gears = make([]*Gear, s.num_rows*len(s.schematic[0]))
+		s.num_gears = 0
+	}
+
+	for index := 0; index < s.num_gears; index++ {
+		gear := s.gears[index]
+		if gear.i == i && gear.j == j {
+			gear.add_part(part_number)
+			return
+		}
+	}
+
+	gear := newGear(i, j)
+	gear.add_part(part_number)
+	s.gears[s.num_gears] = gear
+	s.num_gears++
+}
+
+func (s *Schematic) read_schematic() int {
 	for i := 0; i < s.num_rows; i++ {
 		row := s.schematic[i]
 		start := 0
@@ -58,26 +94,34 @@ func (s *Schematic) foo() int {
 				} else {
 					end = start
 				}
-				if s.is_part_number(i, start, end-1) {
-					part_number, _ := strconv.ParseInt(row[start:end], 10, 0)
-					sum += int(part_number)
-				}
+				part_number, _ := strconv.ParseInt(row[start:end], 10, 0)
+				s.check_gear(i, start, end-1, int(part_number))
 				start = end + 1
 			} else {
 				start++
 			}
 		}
 	}
+
+	var sum int
+	for i := 0; i < s.num_gears; i++ {
+		gear := s.gears[i]
+		if gear.num_parts == 2 {
+			sum += gear.parts[0] * gear.parts[1]
+		}
+	}
+
 	return sum
 }
 
-func is_symbol(char byte) bool {
-	return !is_digit(char) && char != '.'
+func is_gear(char byte) bool {
+	return char == '*'
 }
 func is_digit(char byte) bool {
 	return char >= '0' && char <= '9'
 }
-func (s *Schematic) is_part_number(row_num, start, end int) bool {
+
+func (s *Schematic) check_gear(row_num, start, end, part_number int) {
 	if row_num > 0 {
 		i := row_num - 1
 		j_start := start
@@ -89,12 +133,12 @@ func (s *Schematic) is_part_number(row_num, start, end int) bool {
 			j_end = end + 1
 		}
 		for j := j_start; j <= j_end; j++ {
-			if is_symbol(s.schematic[i][j]) {
-				return true
+			if is_gear(s.schematic[i][j]) {
+				s.add_gear_part(i, j, part_number)
 			}
 		}
 	}
-	if row_num < len(s.schematic)-1 {
+	if row_num < s.num_rows-1 {
 		i := row_num + 1
 		var j_start, j_end int
 		if start > 0 {
@@ -104,23 +148,22 @@ func (s *Schematic) is_part_number(row_num, start, end int) bool {
 			j_end = end + 1
 		}
 		for j := j_start; j <= j_end; j++ {
-			if is_symbol(s.schematic[i][j]) {
-				return true
+			if is_gear(s.schematic[i][j]) {
+				s.add_gear_part(i, j, part_number)
 			}
 		}
 	}
 
 	if start > 0 {
-		if is_symbol(s.schematic[row_num][start-1]) {
-			return true
+		if is_gear(s.schematic[row_num][start-1]) {
+			s.add_gear_part(row_num, start-1, part_number)
 		}
 	}
 	if end < len(s.schematic[row_num])-1 {
-		if is_symbol(s.schematic[row_num][end+1]) {
-			return true
+		if is_gear(s.schematic[row_num][end+1]) {
+			s.add_gear_part(row_num, end+1, part_number)
 		}
 	}
-	return false
 }
 
 func main() {
@@ -135,5 +178,5 @@ func main() {
 		var line string = r.Text()
 		s.add_row(line)
 	}
-	fmt.Printf("Sum = %d\n", s.foo())
+	fmt.Printf("Sum = %d\n", s.read_schematic())
 }
