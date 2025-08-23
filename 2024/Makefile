@@ -1,5 +1,5 @@
 CXX = clang++
-CXXFLAGS = -Wall
+CXXFLAGS = -Wall -std=c++20
 
 BUILD_DIR := /tmp/aoc2024
 SRCS := $(wildcard day*/part*.cc)
