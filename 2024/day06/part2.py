@@ -5,26 +5,33 @@ from common import util
 from functools import partial
 import re
 
-class LabMap():
+
+class LabMap:
     def __init__(self):
         self._rows = []
         self._init_guard = None
 
+    def dump(self):
+        for i in range(len(self._rows)):
+            for j in range(len(self._rows[i])):
+                print(self._rows[i][j], end="")
+            print()
+
     def get_dir_indicator(self):
         if self._guard[2] == 0:
             if self._guard[3] == 1:
-                return '>'
-            return '<'
+                return ">"
+            return "<"
         if self._guard[2] == 1:
-            return 'v'
-        return '^'
+            return "v"
+        return "^"
 
     def get_direction(self, guard):
-        if guard == '<':
+        if guard == "<":
             return (0, -1)
-        if guard == '^':
+        if guard == "^":
             return (-1, 0)
-        if guard == '>':
+        if guard == ">":
             return (0, 1)
         # if guard == 'v':
         return (1, 0)
@@ -48,11 +55,16 @@ class LabMap():
 
     def add_row(self, row):
         self._rows.append([char for char in row])
-        for guard in '<^>v':
+        for guard in "<^>v":
             index = row.find(guard)
             if index != -1:
                 direction = self.get_direction(guard)
-                self._init_guard = [len(self._rows) - 1, index, direction[0], direction[1]]
+                self._init_guard = [
+                    len(self._rows) - 1,
+                    index,
+                    direction[0],
+                    direction[1],
+                ]
 
     def go(self):
         self._visited = []
@@ -64,7 +76,12 @@ class LabMap():
         # print(f'guard = {self._guard}')
         row = self._guard[0]
         col = self._guard[1]
-        while row >= 0 and row < len(self._rows) and col >= 0 and col < len(self._rows[row]):
+        while (
+            row >= 0
+            and row < len(self._rows)
+            and col >= 0
+            and col < len(self._rows[row])
+        ):
             dir_indicator = self.get_dir_indicator()
             # print(f'trying {row}, {col} {dir_indicator}')
             if dir_indicator in self._visited[row][col]:
@@ -73,7 +90,13 @@ class LabMap():
             self._visited[row][col].add(dir_indicator)
             next_row = row + self._guard[2]
             next_col = col + self._guard[3]
-            if next_row >= 0 and next_row < len(self._rows) and next_col >= 0 and next_col < len(self._rows[row]) and self._rows[next_row][next_col] == '#':
+            if (
+                next_row >= 0
+                and next_row < len(self._rows)
+                and next_col >= 0
+                and next_col < len(self._rows[row])
+                and self._rows[next_row][next_col] == "#"
+            ):
                 self.rotate_guard()
             else:
                 row = next_row
@@ -85,15 +108,15 @@ class LabMap():
         obstructions = []
         for i, j in self.get_candidates():
             orig = self._rows[i][j]
-            self._rows[i][j] = '#'
+            self._rows[i][j] = "#"
             # print(f'trying candidate {i},{j}')
             if not self.go():
                 obstructions.append((i, j))
+                # print(f"Obstruction at {i} {j}")
             self._rows[i][j] = orig
 
         # print(obstructions)
         return len(obstructions)
-
 
     def get_candidates(self):
         candidates = []
@@ -111,17 +134,22 @@ class LabMap():
 
         return total
 
+
 def read_map(lab_map, line):
     lab_map.add_row(line.strip())
 
+
 def main():
     lab_map = LabMap()
-    # util.read('day6/sample.txt', partial(read_map, lab_map))
-    util.read('day6/input.txt', partial(read_map, lab_map))
+    # util.read("day06/sample.txt", partial(read_map, lab_map))
+    util.read("day06/input.txt", partial(read_map, lab_map))
 
-    assert(lab_map.go())
+    # lab_map.dump()
+
+    assert lab_map.go()
     total = lab_map.get_possible_obstructions()
-    print(f'possible obstructions = {total}')
+    print(f"possible obstructions = {total}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
